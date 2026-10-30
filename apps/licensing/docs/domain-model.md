@@ -27,21 +27,24 @@ Notes:
 - A Licence maps to one Stripe subscription; Seat count = Stripe quantity.
 - A Service Client is a program identity, not tied to any Company, so it is left out of the diagram.
 
-## Proposed order of an Access Decision (to confirm)
+## Order of an Access Decision
 
 ```mermaid
 flowchart TD
-    A["User asks to use Feature F"] --> B{"Occupies a Seat?"}
+    A["User asks to use Feature F"] --> F{"Role has the Permission?"}
+    F -- no --> D4["Deny: RoleLacksPermission"]
+    F -- yes --> B{"Occupies a Seat?"}
     B -- no --> D1["Deny: NoSeat"]
     B -- yes --> C{"Licence active, or within Grace Period?"}
     C -- no --> D2["Deny: LicenceLapsed"]
     C -- yes --> E{"Tariff Plan includes F?"}
     E -- no --> D3["Deny: PlanLacksFeature"]
-    E -- yes --> F{"Role has the Permission?"}
-    F -- no --> D4["Deny: RoleLacksPermission"]
-    F -- yes --> G{"Usage Allowance left?"}
+    E -- yes --> G{"Usage Allowance left?"}
     G -- no --> D5["Deny: AllowanceExhausted"]
     G -- yes --> OK["Allow"]
 ```
 
 The order decides which reason the user sees first when several apply, so it is a product decision.
+
+- The Permission check comes first because it is static and independent of billing: a Role that can never use F hears that, not "your Licence lapsed".
+- A Company Admin has no Feature Permissions, so every Feature is denied with RoleLacksPermission. Admins only manage Licences, Seats, Invitations and people. This prevents creating many admins to use the product without paying for Seats.
