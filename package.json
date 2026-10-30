@@ -1,0 +1,5 @@
+{
+  "name": "call-center",
+  "private": true,
+  "packageManager": "pnpm@12.16.1"
+}

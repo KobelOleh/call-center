@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  moduleFormat = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Role {
+  key   String @id
+  users User[]
+}
+
+model Company {
+  id    String @id @default(uuid())
+  name  String
+  users User[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  roleKey   String?
+  role      Role?    @relation(fields: [roleKey], references: [key])
+}

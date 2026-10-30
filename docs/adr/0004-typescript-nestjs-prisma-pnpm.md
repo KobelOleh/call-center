@@ -4,7 +4,7 @@ status: proposed
 
 # Services are TypeScript on Node with NestJS and Prisma, in a pnpm workspace
 
-All backend services (licensing, call-center, transcribing) are written in TypeScript on Node with NestJS. PostgreSQL access goes through Prisma, with migrations managed by Prisma Migrate. The repository is a pnpm workspace with one package per service under `apps/`. Tests run against a real PostgreSQL started with Testcontainers and call the service through its HTTP API.
+All backend services (licensing, call-center, transcribing) are written in TypeScript on Node with NestJS. PostgreSQL access goes through Prisma, with migrations managed by Prisma Migrate. The repository is a pnpm workspace with one package per service under `apps/`. Packages are ESM (`"type": "module"`, NestJS 12) and tests run on Vitest with SWC for decorator metadata. Tests run against a real PostgreSQL started with Testcontainers and call the service through its HTTP API.
 
 ## Considered Options
 
