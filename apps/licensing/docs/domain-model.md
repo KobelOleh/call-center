@@ -64,7 +64,7 @@ Agreed with the product owner while building slice 1 (issue #1). Where the spec 
 - Permission: `use-transcription`, held by `manager` and `operator`. `company-admin` holds none.
 
 **Placeholders until login is designed** (login is out of scope for slice 1)
-- `POST /users` creates a person with a name. It stands in for registration.
+- `POST /users` with `{ name, email }` creates a person. It stands in for registration. The email is trimmed and lowercased.
 - The acting User is passed in the `x-user-id` header. It stands in for authentication.
 
 **Licence endpoints** (a stand-in for Stripe; the Stripe slice replaces how a Licence is created)
@@ -80,3 +80,8 @@ Agreed with the product owner while building slice 1 (issue #1). Where the spec 
 - Privacy comes first: the API never reveals whether an email already belongs to a User. An Invitation to an email that belongs to a User of another Company is created like any other and simply cannot be accepted.
 - Invitation lifetime: 7 days by default, set by configuration.
 - Sending the email is a later slice, done as a background job outside the database transaction.
+
+**Accepting an Invitation** (agreed before step 4 continued)
+- `POST /invitations/accept` with `{ token }` and the acting User in `x-user-id`. It is a stand-in for the call made when the person sets their first password.
+- It succeeds only if the acting User's email equals the Invitation's email and the User belongs to no Company. The User then joins the Company in the offered Role and the Seat held by the Invitation becomes the User's Seat. The Invitation is used up.
+- Every failure (wrong token, wrong email, User already in a Company, Invitation already used) gives the same answer, `404` with code `InvitationInvalid`, so the API reveals nothing about accounts.
