@@ -70,3 +70,13 @@ Agreed with the product owner while building slice 1 (issue #1). Where the spec 
 **Licence endpoints** (a stand-in for Stripe; the Stripe slice replaces how a Licence is created)
 - `POST /companies/:id/licences` with `{ tariffPlan, seats }` creates an active Licence with that many Seats and returns its `id`.
 - `GET /companies/:id/licences` lists each Licence with its Tariff Plan, total Seats and free Seats.
+
+**Invitations** (agreed before step 4)
+- An Invitation names an email address, not a User. The email is trimmed and lowercased.
+- The emailed link carries a random secret token (at least 128 bits). Only a hash of it is stored. It works once and stops working when the Invitation is accepted, declined, cancelled or expired.
+- Placeholder: no email is sent in slice 1, so `POST /companies/:id/invitations` returns the token in its response. This is removed when the email slice delivers the token only by email. The pending list never shows the token.
+- `POST /companies/:id/invitations` with `{ email, role, licenceId }` and `GET /companies/:id/invitations` (pending ones, with email, Role and Licence). Accepting is called with the token when the person sets their first password.
+- Only a Company Admin of the Company may invite. A second pending Invitation to the same email in the same Company is refused.
+- Privacy comes first: the API never reveals whether an email already belongs to a User. An Invitation to an email that belongs to a User of another Company is created like any other and simply cannot be accepted.
+- Invitation lifetime: 7 days by default, set by configuration.
+- Sending the email is a later slice, done as a background job outside the database transaction.
