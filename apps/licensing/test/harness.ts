@@ -19,6 +19,7 @@ export async function startHarness(): Promise<Harness> {
   const client = new pg.Client({ connectionString: url });
   await client.connect();
   await client.query(readFileSync(join(import.meta.dirname, '../prisma/migrations/0001_init/migration.sql'), 'utf8'));
+  await client.query(readFileSync(join(import.meta.dirname, '../prisma/seed.sql'), 'utf8'));
   await client.end();
 
   process.env.DATABASE_URL = url;

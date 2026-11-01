@@ -10,9 +10,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleInit() {
     await this.$connect();
-    for (const key of ['company-admin', 'manager', 'operator']) {
-      await this.role.upsert({ where: { key }, update: {}, create: { key } });
-    }
   }
 
   async onModuleDestroy() {

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "db:seed": "node prisma/seed.mjs",
     "test": "vitest run"
   },
   "dependencies": {
