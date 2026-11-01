@@ -14,10 +14,33 @@ model Role {
   users User[]
 }
 
+model TariffPlan {
+  key      String    @id
+  licences Licence[]
+}
+
 model Company {
-  id    String @id @default(uuid())
-  name  String
-  users User[]
+  id       String    @id @default(uuid())
+  name     String
+  users    User[]
+  licences Licence[]
+}
+
+model Licence {
+  id            String     @id @default(uuid())
+  companyId     String
+  company       Company    @relation(fields: [companyId], references: [id])
+  tariffPlanKey String
+  tariffPlan    TariffPlan @relation(fields: [tariffPlanKey], references: [key])
+  seats         Seat[]
+}
+
+model Seat {
+  id        String  @id @default(uuid())
+  licenceId String
+  licence   Licence @relation(fields: [licenceId], references: [id])
+  userId    String? @unique
+  user      User?   @relation(fields: [userId], references: [id])
 }
 
 model User {
@@ -27,4 +50,5 @@ model User {
   company   Company? @relation(fields: [companyId], references: [id])
   roleKey   String?
   role      Role?    @relation(fields: [roleKey], references: [key])
+  seat      Seat?
 }
