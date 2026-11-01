@@ -38,6 +38,26 @@ describe('Invitations', () => {
     expect(pending.body).toEqual([{ id: expect.any(String), email: 'ivan@acme.com', role: 'operator', licenceId }]);
   });
 
+  it('lets only one of two simultaneous Invitations take the last free Seat', async () => {
+    const { adminId, companyId, licenceId } = await companyWithLicence(1);
+    const invite = (email: string) =>
+      h
+        .http()
+        .post(`/companies/${companyId}/invitations`)
+        .set('x-user-id', adminId)
+        .send({ email, role: 'operator', licenceId });
+
+    await Promise.all(
+      Array.from({ length: 20 }, () => h.http().get(`/companies/${companyId}/licences`).set('x-user-id', adminId)),
+    );
+    const results = await Promise.all(Array.from({ length: 50 }, (_, i) => invite(`person${i}@acme.com`)));
+
+    expect(results.filter((r) => r.status === 201)).toHaveLength(1);
+    expect(results.filter((r) => r.status === 409)).toHaveLength(49);
+    const pending = await h.http().get(`/companies/${companyId}/invitations`).set('x-user-id', adminId).expect(200);
+    expect(pending.body).toHaveLength(1);
+  });
+
   it('is refused when the Licence has no free Seat', async () => {
     const { adminId, companyId, licenceId } = await companyWithLicence(1);
     await h

@@ -10,9 +10,12 @@ export class InvitationsController {
   async invite(@Param('id') id: string, @Body() body: { email: string; role: string; licenceId: string }) {
     const token = randomBytes(32).toString('base64url');
     const invitation = await this.db.$transaction(async (tx) => {
-      const seat = await tx.seat.findFirst({
-        where: { licenceId: body.licenceId, userId: null, invitationId: null },
-      });
+      // Prisma has no row locking (ADR 0004). SKIP LOCKED makes a concurrent request pass over a Seat another one is taking.
+      const [seat] = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM "Seat"
+        WHERE "licenceId" = ${body.licenceId} AND "userId" IS NULL AND "invitationId" IS NULL
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED`;
       if (!seat) throw new ConflictException({ code: 'NoFreeSeat' });
       const created = await tx.invitation.create({
         data: {
