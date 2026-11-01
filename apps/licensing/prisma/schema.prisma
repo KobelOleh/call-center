@@ -12,6 +12,7 @@ datasource db {
 model Role {
   key   String @id
   users User[]
+  invitations Invitation[]
 }
 
 model TariffPlan {
@@ -24,6 +25,7 @@ model Company {
   name     String
   users    User[]
   licences Licence[]
+  invitations Invitation[]
 }
 
 model Licence {
@@ -41,6 +43,19 @@ model Seat {
   licence   Licence @relation(fields: [licenceId], references: [id])
   userId    String? @unique
   user      User?   @relation(fields: [userId], references: [id])
+  invitationId String?     @unique
+  invitation   Invitation? @relation(fields: [invitationId], references: [id])
+}
+
+model Invitation {
+  id        String  @id @default(uuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+  email     String
+  roleKey   String
+  role      Role    @relation(fields: [roleKey], references: [key])
+  tokenHash String  @unique
+  seat      Seat?
 }
 
 model User {

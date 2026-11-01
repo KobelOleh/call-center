@@ -24,7 +24,7 @@ export class LicencesController {
       id: l.id,
       tariffPlan: l.tariffPlanKey,
       seats: l.seats.length,
-      freeSeats: l.seats.filter((s) => s.userId === null).length,
+      freeSeats: l.seats.filter((s) => s.userId === null && s.invitationId === null).length,
     }));
   }
 }
