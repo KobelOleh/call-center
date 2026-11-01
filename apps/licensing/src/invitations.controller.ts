@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { Body, ConflictException, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, ConflictException, Controller, Get, Headers, Param, Post } from '@nestjs/common';
 import { PrismaService } from './prisma.service.js';
 
 @Controller()
@@ -29,6 +29,19 @@ export class InvitationsController {
       return created;
     });
     return { id: invitation.id, token };
+  }
+
+  @Post('invitations/accept')
+  async accept(@Headers('x-user-id') userId: string, @Body() body: { token: string }) {
+    await this.db.$transaction(async (tx) => {
+      const invitation = await tx.invitation.findUniqueOrThrow({
+        where: { tokenHash: createHash('sha256').update(body.token).digest('hex') },
+        include: { seat: true },
+      });
+      await tx.seat.update({ where: { id: invitation.seat!.id }, data: { invitationId: null, userId } });
+      await tx.user.update({ where: { id: userId }, data: { companyId: invitation.companyId, roleKey: invitation.roleKey } });
+      await tx.invitation.delete({ where: { id: invitation.id } });
+    });
   }
 
   @Get('companies/:id/invitations')

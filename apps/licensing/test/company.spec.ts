@@ -10,7 +10,7 @@ describe('Company creation', () => {
   });
 
   it('makes the User who creates a Company its first Company Admin', async () => {
-    const user = await h.http().post('/users').send({ name: 'Olga' }).expect(201);
+    const user = await h.http().post('/users').send({ name: 'Olga', email: `olga${Math.random()}@acme.com` }).expect(201);
 
     const company = await h
       .http()

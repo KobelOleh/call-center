@@ -10,7 +10,7 @@ describe('Invitations', () => {
   });
 
   async function companyWithLicence(seats: number) {
-    const user = await h.http().post('/users').send({ name: 'Olga' }).expect(201);
+    const user = await h.http().post('/users').send({ name: 'Olga', email: `olga${Math.random()}@acme.com` }).expect(201);
     const company = await h.http().post('/companies').set('x-user-id', user.body.id).send({ name: 'Acme' }).expect(201);
     const licence = await h
       .http()
@@ -77,5 +77,30 @@ describe('Invitations', () => {
     expect(res.body.code).toBe('NoFreeSeat');
     const pending = await h.http().get(`/companies/${companyId}/invitations`).set('x-user-id', adminId).expect(200);
     expect(pending.body).toHaveLength(1);
+  });
+
+  it('turns the held Seat into the invited person\'s Seat when accepted', async () => {
+    const { adminId, companyId, licenceId } = await companyWithLicence(3);
+    const invitation = await h
+      .http()
+      .post(`/companies/${companyId}/invitations`)
+      .set('x-user-id', adminId)
+      .send({ email: 'ivan@acme.com', role: 'operator', licenceId })
+      .expect(201);
+    const ivan = await h.http().post('/users').send({ name: 'Ivan', email: 'Ivan@Acme.com' }).expect(201);
+
+    await h
+      .http()
+      .post('/invitations/accept')
+      .set('x-user-id', ivan.body.id)
+      .send({ token: invitation.body.token })
+      .expect(201);
+
+    const members = await h.http().get(`/companies/${companyId}/members`).set('x-user-id', adminId).expect(200);
+    expect(members.body).toContainEqual({ userId: ivan.body.id, name: 'Ivan', role: 'operator' });
+    const licences = await h.http().get(`/companies/${companyId}/licences`).set('x-user-id', adminId).expect(200);
+    expect(licences.body[0]).toMatchObject({ seats: 3, freeSeats: 2 });
+    const pending = await h.http().get(`/companies/${companyId}/invitations`).set('x-user-id', adminId).expect(200);
+    expect(pending.body).toEqual([]);
   });
 });

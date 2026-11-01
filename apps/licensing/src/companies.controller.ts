@@ -7,8 +7,8 @@ export class CompaniesController {
   constructor(private readonly db: PrismaService) {}
 
   @Post('users')
-  async createUser(@Body() body: { name: string }) {
-    const user = await this.db.user.create({ data: { name: body.name } });
+  async createUser(@Body() body: { name: string; email: string }) {
+    const user = await this.db.user.create({ data: { name: body.name, email: body.email.trim().toLowerCase() } });
     return { id: user.id };
   }
 

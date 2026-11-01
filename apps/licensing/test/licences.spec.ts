@@ -10,7 +10,7 @@ describe('Licences and Seats', () => {
   });
 
   it('shows a Company its Licence with the Tariff Plan and free Seats', async () => {
-    const user = await h.http().post('/users').send({ name: 'Olga' }).expect(201);
+    const user = await h.http().post('/users').send({ name: 'Olga', email: `olga${Math.random()}@acme.com` }).expect(201);
     const company = await h.http().post('/companies').set('x-user-id', user.body.id).send({ name: 'Acme' }).expect(201);
 
     const licence = await h
