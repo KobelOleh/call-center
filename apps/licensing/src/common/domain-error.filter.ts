@@ -6,6 +6,7 @@ const statusByCode: Record<DomainErrorCode, number> = {
   LastCompanyAdmin: 409,
   NoFreeSeat: 409,
   InvitationInvalid: 404,
+  NotCompanyAdmin: 403,
 };
 
 @Catch(DomainError)

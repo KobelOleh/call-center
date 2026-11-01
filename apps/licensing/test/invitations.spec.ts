@@ -104,6 +104,48 @@ describe('Invitations', () => {
     expect(pending.body).toEqual([]);
   });
 
+  describe('inviting is refused with NotCompanyAdmin', () => {
+    it('for a member who is not a Company Admin', async () => {
+      const { adminId, companyId, licenceId } = await companyWithLicence(3);
+      const email = `ivan${Math.random()}@acme.com`;
+      const invitation = await h
+        .http()
+        .post(`/companies/${companyId}/invitations`)
+        .set('x-user-id', adminId)
+        .send({ email, role: 'operator', licenceId })
+        .expect(201);
+      const ivan = await h.http().post('/users').send({ name: 'Ivan', email }).expect(201);
+      await h.http().post('/invitations/accept').set('x-user-id', ivan.body.id).send({ token: invitation.body.token }).expect(201);
+
+      const res = await h
+        .http()
+        .post(`/companies/${companyId}/invitations`)
+        .set('x-user-id', ivan.body.id)
+        .send({ email: 'petro@acme.com', role: 'operator', licenceId });
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe('NotCompanyAdmin');
+      const pending = await h.http().get(`/companies/${companyId}/invitations`).set('x-user-id', adminId).expect(200);
+      expect(pending.body).toEqual([]);
+      const licences = await h.http().get(`/companies/${companyId}/licences`).set('x-user-id', adminId).expect(200);
+      expect(licences.body[0]).toMatchObject({ freeSeats: 2 });
+    });
+  });
+
+  it('refuses an Invitation from the admin of another Company with NotCompanyAdmin', async () => {
+    const { companyId, licenceId } = await companyWithLicence(2);
+    const other = await companyWithLicence(1);
+
+    const res = await h
+      .http()
+      .post(`/companies/${companyId}/invitations`)
+      .set('x-user-id', other.adminId)
+      .send({ email: 'petro@acme.com', role: 'operator', licenceId });
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('NotCompanyAdmin');
+  });
+
   describe('accepting is refused with InvitationInvalid', () => {
     async function invitedIvan() {
       const { adminId, companyId, licenceId } = await companyWithLicence(2);

@@ -9,7 +9,9 @@ export class InvitationsService {
   constructor(private readonly db: PrismaService) {}
 
   /** Holds a free Seat of the Licence for the invited email. Returns the secret token (a stand-in until email is sent). */
-  async invite(companyId: string, dto: InviteDto) {
+  async invite(actingUserId: string, companyId: string, dto: InviteDto) {
+    const admin = await this.db.user.findFirst({ where: { id: actingUserId, companyId, roleKey: 'company-admin' } });
+    if (!admin) throw new DomainError('NotCompanyAdmin');
     const token = newInvitationToken();
     const invitation = await this.db.$transaction(async (tx) => {
       // Prisma has no row locking (ADR 0004). SKIP LOCKED makes a concurrent request pass over a Seat another one is taking.

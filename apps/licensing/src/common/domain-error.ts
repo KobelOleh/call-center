@@ -1,4 +1,4 @@
-export type DomainErrorCode = 'LastCompanyAdmin' | 'NoFreeSeat' | 'InvitationInvalid';
+export type DomainErrorCode = 'LastCompanyAdmin' | 'NoFreeSeat' | 'InvitationInvalid' | 'NotCompanyAdmin';
 
 /** A broken business rule. It knows nothing about HTTP; the DomainErrorFilter maps its code to a status. */
 export class DomainError extends Error {

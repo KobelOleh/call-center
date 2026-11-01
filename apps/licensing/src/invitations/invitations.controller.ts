@@ -8,8 +8,8 @@ export class InvitationsController {
   constructor(private readonly invitations: InvitationsService) {}
 
   @Post('companies/:id/invitations')
-  invite(@Param('id') id: string, @Body() dto: InviteDto) {
-    return this.invitations.invite(id, dto);
+  invite(@ActingUser() actingUserId: string, @Param('id') id: string, @Body() dto: InviteDto) {
+    return this.invitations.invite(actingUserId, id, dto);
   }
 
   @Get('companies/:id/invitations')
