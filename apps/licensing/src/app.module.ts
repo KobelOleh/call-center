@@ -1,11 +1,16 @@
-import { Module } from '@nestjs/common';
-import { CompaniesController } from './companies.controller.js';
-import { InvitationsController } from './invitations.controller.js';
-import { LicencesController } from './licences.controller.js';
-import { PrismaService } from './prisma.service.js';
+import { Module, ValidationPipe } from '@nestjs/common';
+import { APP_FILTER, APP_PIPE } from '@nestjs/core';
+import { DomainErrorFilter } from './common/domain-error.filter.js';
+import { CompaniesModule } from './companies/companies.module.js';
+import { InvitationsModule } from './invitations/invitations.module.js';
+import { LicencesModule } from './licences/licences.module.js';
+import { UsersModule } from './users/users.module.js';
 
 @Module({
-  controllers: [CompaniesController, InvitationsController, LicencesController],
-  providers: [PrismaService],
+  imports: [UsersModule, CompaniesModule, LicencesModule, InvitationsModule],
+  providers: [
+    { provide: APP_PIPE, useValue: new ValidationPipe({ transform: true, whitelist: true }) },
+    { provide: APP_FILTER, useClass: DomainErrorFilter },
+  ],
 })
 export class AppModule {}
