@@ -103,4 +103,70 @@ describe('Invitations', () => {
     const pending = await h.http().get(`/companies/${companyId}/invitations`).set('x-user-id', adminId).expect(200);
     expect(pending.body).toEqual([]);
   });
+
+  describe('accepting is refused with InvitationInvalid', () => {
+    async function invitedIvan() {
+      const { adminId, companyId, licenceId } = await companyWithLicence(2);
+      const email = `ivan${Math.random()}@acme.com`;
+      const invitation = await h
+        .http()
+        .post(`/companies/${companyId}/invitations`)
+        .set('x-user-id', adminId)
+        .send({ email, role: 'operator', licenceId })
+        .expect(201);
+      const ivan = await h.http().post('/users').send({ name: 'Ivan', email: `other${Math.random()}@acme.com` }).expect(201);
+      return { adminId, companyId, email, token: invitation.body.token as string, ivanId: ivan.body.id as string };
+    }
+
+    it('for a wrong token', async () => {
+      const { adminId, companyId, ivanId } = await invitedIvan();
+
+      const res = await h.http().post('/invitations/accept').set('x-user-id', ivanId).send({ token: 'not-a-real-token' });
+
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe('InvitationInvalid');
+      const pending = await h.http().get(`/companies/${companyId}/invitations`).set('x-user-id', adminId).expect(200);
+      expect(pending.body).toHaveLength(1);
+    });
+
+    it('when the acting User has another email', async () => {
+      const { adminId, companyId, token, ivanId } = await invitedIvan();
+
+      const res = await h.http().post('/invitations/accept').set('x-user-id', ivanId).send({ token });
+
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe('InvitationInvalid');
+      const pending = await h.http().get(`/companies/${companyId}/invitations`).set('x-user-id', adminId).expect(200);
+      expect(pending.body).toHaveLength(1);
+      const members = await h.http().get(`/companies/${companyId}/members`).set('x-user-id', adminId).expect(200);
+      expect(members.body).toHaveLength(1);
+    });
+
+    it('for a token that was already used', async () => {
+      const { adminId, companyId, email, token } = await invitedIvan();
+      const ivan = await h.http().post('/users').send({ name: 'Ivan', email }).expect(201);
+      await h.http().post('/invitations/accept').set('x-user-id', ivan.body.id).send({ token }).expect(201);
+      const other = await h.http().post('/users').send({ name: 'Petro', email: `petro${Math.random()}@acme.com` }).expect(201);
+
+      const res = await h.http().post('/invitations/accept').set('x-user-id', other.body.id).send({ token });
+
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe('InvitationInvalid');
+      const members = await h.http().get(`/companies/${companyId}/members`).set('x-user-id', adminId).expect(200);
+      expect(members.body).toHaveLength(2);
+    });
+
+    it('when the acting User already belongs to a Company', async () => {
+      const { adminId, companyId, email, token } = await invitedIvan();
+      const ivan = await h.http().post('/users').send({ name: 'Ivan', email }).expect(201);
+      await h.http().post('/companies').set('x-user-id', ivan.body.id).send({ name: 'Ivan Ltd' }).expect(201);
+
+      const res = await h.http().post('/invitations/accept').set('x-user-id', ivan.body.id).send({ token });
+
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe('InvitationInvalid');
+      const pending = await h.http().get(`/companies/${companyId}/invitations`).set('x-user-id', adminId).expect(200);
+      expect(pending.body).toHaveLength(1);
+    });
+  });
 });
