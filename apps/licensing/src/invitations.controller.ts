@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, ConflictException, Controller, Get, Param, Post } from '@nestjs/common';
 import { PrismaService } from './prisma.service.js';
 
 @Controller()
@@ -10,9 +10,10 @@ export class InvitationsController {
   async invite(@Param('id') id: string, @Body() body: { email: string; role: string; licenceId: string }) {
     const token = randomBytes(32).toString('base64url');
     const invitation = await this.db.$transaction(async (tx) => {
-      const seat = await tx.seat.findFirstOrThrow({
+      const seat = await tx.seat.findFirst({
         where: { licenceId: body.licenceId, userId: null, invitationId: null },
       });
+      if (!seat) throw new ConflictException({ code: 'NoFreeSeat' });
       const created = await tx.invitation.create({
         data: {
           companyId: id,

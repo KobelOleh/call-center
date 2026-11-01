@@ -37,4 +37,25 @@ describe('Invitations', () => {
     const pending = await h.http().get(`/companies/${companyId}/invitations`).set('x-user-id', adminId).expect(200);
     expect(pending.body).toEqual([{ id: expect.any(String), email: 'ivan@acme.com', role: 'operator', licenceId }]);
   });
+
+  it('is refused when the Licence has no free Seat', async () => {
+    const { adminId, companyId, licenceId } = await companyWithLicence(1);
+    await h
+      .http()
+      .post(`/companies/${companyId}/invitations`)
+      .set('x-user-id', adminId)
+      .send({ email: 'ivan@acme.com', role: 'operator', licenceId })
+      .expect(201);
+
+    const res = await h
+      .http()
+      .post(`/companies/${companyId}/invitations`)
+      .set('x-user-id', adminId)
+      .send({ email: 'petro@acme.com', role: 'manager', licenceId });
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('NoFreeSeat');
+    const pending = await h.http().get(`/companies/${companyId}/invitations`).set('x-user-id', adminId).expect(200);
+    expect(pending.body).toHaveLength(1);
+  });
 });
